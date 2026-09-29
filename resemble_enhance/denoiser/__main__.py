@@ -2,8 +2,8 @@ import argparse
 from pathlib import Path
 
 import torch
-import torchaudio
 
+from ..audio_io import load_audio, save_audio
 from .inference import denoise
 
 
@@ -19,11 +19,10 @@ def main():
 
     for path in args.in_dir.glob(f"**/*{args.suffix}"):
         print(f"Processing {path} ..")
-        dwav, sr = torchaudio.load(path)
+        dwav, sr = load_audio(path)
         hwav, sr = denoise(dwav[0], sr, args.run_dir, args.device)
         out_path = args.out_dir / path.relative_to(args.in_dir)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        torchaudio.save(out_path, hwav[None], sr)
+        save_audio(out_path, hwav[None], sr)
 
 
 if __name__ == "__main__":

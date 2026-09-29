@@ -10,7 +10,9 @@ from torch import Tensor
 from tqdm import tqdm
 
 from ..data import create_dataloaders, mix_fg_bg
-from ..utils import Engine, TrainLoop, save_mels, setup_logging, tree_map
+from ..utils import save_mels, setup_logging, tree_map
+from ..utils.engine import Engine
+from ..utils.train_loop import TrainLoop
 from ..utils.distributed import is_local_leader
 from .enhancer import Enhancer
 from .hparams import HParams

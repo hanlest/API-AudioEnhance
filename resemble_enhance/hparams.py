@@ -1,5 +1,7 @@
 import logging
+import os
 from dataclasses import asdict, dataclass
+from io import StringIO
 from pathlib import Path
 
 from omegaconf import OmegaConf
@@ -88,10 +90,18 @@ class HParams:
         return [_make_stft_cfg(h) for h in (100, 256, 512)]
 
     @classmethod
+    def _read_omega_conf(cls, path: Path):
+        text = path.read_text(encoding="utf-8")
+        # Checkpoints from Linux use PosixPath tags; Path works on Windows too.
+        if os.name == "nt":
+            text = text.replace("pathlib.PosixPath", "pathlib.Path")
+        return OmegaConf.load(StringIO(text))
+
+    @classmethod
     def from_yaml(cls, path: Path) -> "HParams":
         logger.info(f"Reading hparams from {path}")
         # First merge to fix types (e.g., str -> Path)
-        return cls(**dict(OmegaConf.merge(cls(), OmegaConf.load(path))))
+        return cls(**dict(OmegaConf.merge(cls(), cls._read_omega_conf(path))))
 
     def save_if_not_exists(self, run_dir: Path):
         path = run_dir / "hparams.yaml"

@@ -4,9 +4,9 @@ import time
 from pathlib import Path
 
 import torch
-import torchaudio
 from tqdm import tqdm
 
+from ..audio_io import load_audio, save_audio
 from .inference import denoise, enhance
 
 
@@ -97,7 +97,7 @@ def main():
         if args.parallel_mode and out_path.exists():
             continue
         pbar.set_description(f"Processing {out_path}")
-        dwav, sr = torchaudio.load(path)
+        dwav, sr = load_audio(path)
         dwav = dwav.mean(0)
         if args.denoise_only:
             hwav, sr = denoise(
@@ -117,8 +117,7 @@ def main():
                 tau=args.tau,
                 run_dir=run_dir,
             )
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        torchaudio.save(out_path, hwav[None], sr)
+        save_audio(out_path, hwav[None], sr)
 
     # Cool emoji effect saying the job is done
     elapsed_time = time.perf_counter() - start_time

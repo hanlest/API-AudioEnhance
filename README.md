@@ -1,4 +1,20 @@
-# Resemble Enhance
+# API-AudioEnhance
+
+Demo Gradio, **API REST con Swagger** (`/docs`) y CLI sobre los modelos [Resemble Enhance](https://github.com/resemble-ai/resemble-enhance).
+
+| Inicio | Comando |
+|--------|---------|
+| Demo web | `start.bat` → `python app.py` |
+| API + Swagger | `start-api.bat` → http://127.0.0.1:8000/docs |
+| CLI | `api-audioenhance in_dir out_dir` (alias: `resemble-enhance`) |
+
+Variables opcionales: `AUDIOENHANCE_DEVICE` (cuda/cpu), `AUDIOENHANCE_API_PORT`.
+
+---
+
+Documentación original del upstream:
+
+## Resemble Enhance (upstream)
 
 [![PyPI](https://img.shields.io/pypi/v/resemble-enhance.svg)](https://pypi.org/project/resemble-enhance/)
 [![Hugging Face Space](https://img.shields.io/badge/Hugging%20Face%20%F0%9F%A4%97-Space-yellow)](https://huggingface.co/spaces/ResembleAI/resemble-enhance)

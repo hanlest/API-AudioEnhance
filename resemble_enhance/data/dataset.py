@@ -4,8 +4,9 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torchaudio
 import torchaudio.functional as AF
+
+from ..audio_io import load_audio
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset as DatasetBase
 
@@ -83,7 +84,7 @@ class Dataset(DatasetBase):
         self.distorter = Distorter(hp, training=training, mode=mode)
 
     def _load_wav(self, path, length=None, random_crop=True):
-        wav, sr = torchaudio.load(path)
+        wav, sr = load_audio(path)
 
         wav = AF.resample(
             waveform=wav,

@@ -34,10 +34,10 @@ with open("requirements.txt", "r") as f:
     requirements = f.read().splitlines()
 
 setup(
-    name="resemble-enhance",
+    name="api-audioenhance",
     python_requires=">=3.10",
     version=write_version("0.0.2", pre_release=True),
-    description="Speech denoising and enhancement with deep learning",
+    description="API-AudioEnhance — denoise y mejora de voz (modelos Resemble Enhance)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
@@ -47,6 +47,7 @@ setup(
     author_email="team@resemble.ai",
     entry_points={
         "console_scripts": [
+            "api-audioenhance=resemble_enhance.enhancer.__main__:main",
             "resemble-enhance=resemble_enhance.enhancer.__main__:main",
         ]
     },

@@ -8,3 +8,6 @@
 version.py
 __pycache__
 model_repo
+.cache
+.venv/
+.deps_installed
