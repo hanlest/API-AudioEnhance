@@ -5,10 +5,11 @@ Demo Gradio, **API REST con Swagger** (`/docs`) y CLI sobre los modelos [Resembl
 | Inicio | Comando |
 |--------|---------|
 | Demo web | `start.bat` → `python app.py` |
-| API + Swagger | `start-api.bat` → http://127.0.0.1:8000/docs |
+| API + Swagger | `PM2-start-api.bat` → http://127.0.0.1:8000/docs/ (con `BASE_PATH=/docs`) |
+| Detener API | `PM2-stop-api.bat` |
 | CLI | `api-audioenhance in_dir out_dir` (alias: `resemble-enhance`) |
 
-Variables opcionales: `AUDIOENHANCE_DEVICE` (cuda/cpu), `AUDIOENHANCE_API_PORT`.
+Variables opcionales: `AUDIOENHANCE_DEVICE` (cuda/cpu), `AUDIOENHANCE_API_PORT`, `BASE_PATH` (prefijo de rutas; por defecto `/docs` en `PM2-start-api.bat`).
 
 ---
 

@@ -1,12 +1,13 @@
 """
 API REST de API-AudioEnhance.
 
-Swagger UI:  http://127.0.0.1:8000/docs
-ReDoc:       http://127.0.0.1:8000/redoc
+Swagger UI (sin BASE_PATH):  http://127.0.0.1:8000/docs
+Con BASE_PATH=/docs:         http://127.0.0.1:8000/docs/
 """
 
 from __future__ import annotations
 
+import os
 from enum import Enum
 from pathlib import Path
 from typing import Annotated
@@ -20,18 +21,43 @@ from resemble_enhance.branding import PROJECT_NAME
 from resemble_enhance.device import describe_device
 from resemble_enhance.service import DEVICE, run_denoise, run_enhance, run_enhance_mp3, run_youtube_clip, new_output_path
 
-app = FastAPI(
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
+
+def _normalize_base_path(raw: str | None) -> str:
+    if not raw or not str(raw).strip():
+        return ""
+    path = str(raw).strip()
+    if not path.startswith("/"):
+        path = "/" + path
+    return path.rstrip("/") or ""
+
+
+BASE_PATH = _normalize_base_path(os.environ.get("BASE_PATH"))
+
+_api_description = (
+    f"Mejora y denoise de voz con IA ({PROJECT_NAME}).\n\n"
+    "Sube un archivo de audio o recorta un clip de YouTube y obtén WAV o MP3 procesado."
+)
+_docs_url = "/" if BASE_PATH else "/docs"
+_redoc_url = "/redoc"
+_oauth2_redirect_url = "/oauth2-redirect" if BASE_PATH else None
+
+api = FastAPI(
     title=f"{PROJECT_NAME} API",
-    description=(
-        f"Mejora y denoise de voz con IA ({PROJECT_NAME}).\n\n"
-        "Sube un archivo de audio o recorta un clip de YouTube y obtén WAV o MP3 procesado."
-    ),
+    description=_api_description,
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    swagger_ui_oauth2_redirect_url=_oauth2_redirect_url,
 )
 
-app.add_middleware(
+api.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
@@ -96,19 +122,19 @@ async def _save_upload(upload: UploadFile, dest: Path) -> None:
     dest.write_bytes(data)
 
 
-@app.get("/health", response_model=HealthResponse, tags=["Sistema"])
+@api.get("/health", response_model=HealthResponse, tags=["Sistema"])
 def health():
     """Comprueba que el servicio responde."""
     return HealthResponse()
 
 
-@app.get("/v1/info", response_model=InfoResponse, tags=["Sistema"])
+@api.get("/v1/info", response_model=InfoResponse, tags=["Sistema"])
 def info():
     """Dispositivo usado para inferencia (CPU/CUDA)."""
     return InfoResponse(device=DEVICE, device_description=describe_device(DEVICE))
 
 
-@app.post(
+@api.post(
     "/v1/denoise",
     tags=["Audio"],
     summary="Quitar ruido",
@@ -135,7 +161,7 @@ async def api_denoise(
     return FileResponse(out, media_type="audio/wav", filename="denoised.wav")
 
 
-@app.post(
+@api.post(
     "/v1/enhance",
     tags=["Audio"],
     summary="Mejorar audio",
@@ -166,7 +192,7 @@ async def api_enhance(
     return FileResponse(out, media_type="audio/wav", filename="enhanced.wav")
 
 
-@app.post(
+@api.post(
     "/v1/enhance/mp3",
     tags=["Audio"],
     summary="Mejorar audio (MP3)",
@@ -197,7 +223,7 @@ async def api_enhance_mp3(
     return FileResponse(out, media_type="audio/mpeg", filename="enhanced.mp3")
 
 
-@app.post(
+@api.post(
     "/v1/youtube/clip",
     tags=["YouTube"],
     summary="Descargar recorte de YouTube",
@@ -222,6 +248,13 @@ def api_youtube_clip(body: YoutubeClipRequest, background_tasks: BackgroundTasks
     return FileResponse(out, media_type="audio/wav", filename="youtube_clip.wav")
 
 
+if BASE_PATH:
+    app = FastAPI(title=f"{PROJECT_NAME} API", docs_url=None, redoc_url=None, openapi_url=None)
+    app.mount(BASE_PATH, api)
+else:
+    app = api
+
+
 def main():
     import uvicorn
 
@@ -229,8 +262,8 @@ def main():
         "api:app",
         host="0.0.0.0",
         port=int(
-            __import__("os").environ.get("AUDIOENHANCE_API_PORT")
-            or __import__("os").environ.get("RESEMBLE_API_PORT")
+            os.environ.get("AUDIOENHANCE_API_PORT")
+            or os.environ.get("RESEMBLE_API_PORT")
             or "8000"
         ),
         reload=False,
