@@ -5,11 +5,15 @@ Demo Gradio, **API REST con Swagger** (`/docs`) y CLI sobre los modelos [Resembl
 | Inicio | Comando |
 |--------|---------|
 | Demo web | `start.bat` → `python app.py` |
-| API + Swagger | `PM2-start-api.bat` → http://127.0.0.1:8000/docs/ (con `BASE_PATH=/docs`) |
+| API + Swagger | `PM2-start-api.bat` → http://127.0.0.1:8000/docs |
 | Detener API | `PM2-stop-api.bat` |
 | CLI | `api-audioenhance in_dir out_dir` (alias: `resemble-enhance`) |
 
-Variables opcionales: `AUDIOENHANCE_DEVICE` (cuda/cpu), `AUDIOENHANCE_API_PORT`, `BASE_PATH` (prefijo de rutas; por defecto `/docs` en `PM2-start-api.bat`).
+Variables opcionales: `AUDIOENHANCE_DEVICE` (cuda/cpu), `AUDIOENHANCE_API_PORT`, `BASE_PATH` (ruta de Swagger; por defecto `/docs`).
+
+Progreso SSE en denoise/enhance: `POST /v1/denoise?stream=true` (o `/v1/enhance`, `/v1/enhance/mp3`) devuelve `text/event-stream`; el último evento incluye `download_url` para obtener el archivo.
+
+En **enhance**, `lambd` (0–1, opcional, default `0.1`) va en query (`?lambd=0.15`) o en el multipart (`-F lambd=0.15`).
 
 ---
 

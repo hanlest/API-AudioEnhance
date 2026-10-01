@@ -1,5 +1,7 @@
 import logging
 import time
+from collections.abc import Callable
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -9,6 +11,8 @@ from torchaudio.transforms import MelSpectrogram
 from tqdm import trange
 
 from .hparams import HParams
+
+ProgressCallback = Callable[[dict[str, Any]], None]
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +124,15 @@ def remove_weight_norm_recursively(module):
             pass
 
 
-def inference(model, dwav, sr, device, chunk_seconds: float = 30.0, overlap_seconds: float = 1.0):
+def inference(
+    model,
+    dwav,
+    sr,
+    device,
+    chunk_seconds: float = 30.0,
+    overlap_seconds: float = 1.0,
+    progress_callback: ProgressCallback | None = None,
+):
     remove_weight_norm_recursively(model)
 
     hp: HParams = model.hp
@@ -148,10 +160,33 @@ def inference(model, dwav, sr, device, chunk_seconds: float = 30.0, overlap_seco
     overlap_length = int(sr * overlap_seconds)
     hop_length = chunk_length - overlap_length
 
-    chunks = []
-    for start in trange(0, dwav.shape[-1], hop_length):
-        chunks.append(inference_chunk(model, dwav[start : start + chunk_length], sr, device))
+    chunk_starts = list(range(0, dwav.shape[-1], hop_length))
+    total_chunks = max(len(chunk_starts), 1)
 
+    def _emit(payload: dict[str, Any]) -> None:
+        if progress_callback is not None:
+            progress_callback(payload)
+
+    _emit({"stage": "processing", "chunk": 0, "total_chunks": total_chunks, "percent": 5.0})
+
+    chunks = []
+    if progress_callback is None:
+        for start in trange(0, dwav.shape[-1], hop_length):
+            chunks.append(inference_chunk(model, dwav[start : start + chunk_length], sr, device))
+    else:
+        for index, start in enumerate(chunk_starts, start=1):
+            chunks.append(inference_chunk(model, dwav[start : start + chunk_length], sr, device))
+            percent = 5.0 + (index / total_chunks) * 85.0
+            _emit(
+                {
+                    "stage": "processing",
+                    "chunk": index,
+                    "total_chunks": total_chunks,
+                    "percent": round(percent, 1),
+                }
+            )
+
+    _emit({"stage": "merging", "percent": 92.0})
     hwav = merge_chunks(chunks, chunk_length, hop_length, sr=sr, length=dwav.shape[-1])
 
     if torch.cuda.is_available():
@@ -159,5 +194,7 @@ def inference(model, dwav, sr, device, chunk_seconds: float = 30.0, overlap_seco
 
     elapsed_time = time.perf_counter() - start_time
     logger.info(f"Elapsed time: {elapsed_time:.3f} s, {hwav.shape[-1] / elapsed_time / 1000:.3f} kHz")
+
+    _emit({"stage": "inference_done", "percent": 98.0, "elapsed_seconds": round(elapsed_time, 3)})
 
     return hwav, sr

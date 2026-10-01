@@ -36,6 +36,7 @@ if exist "%PYTHONW%" (
 ) else (
     set "INTERPRETER=%PYTHON%"
 )
+rem pythonw = sin ventana de consola; logs en pm2 logs / archivos out+error
 
 "%PYTHON%" -c "import fastapi, uvicorn" >nul 2>&1
 if errorlevel 1 (
@@ -65,6 +66,7 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr "127.0.0.1:%PORT%" ^| findstr
 
 echo Iniciando API-AudioEnhance en PM2...
 set PYTHONUNBUFFERED=1
+set TQDM_DISABLE=1
 set AUDIOENHANCE_API_PORT=%PORT%
 set BASE_PATH=%BASE_PATH%
 call pm2 start api.py --name API-AudioEnhance --interpreter "%INTERPRETER%" --cwd "%CD%"
@@ -101,9 +103,10 @@ echo Servicio listo en PM2 como API-AudioEnhance
 if "%BASE_PATH%"=="" (
     echo Swagger: http://127.0.0.1:%PORT%/docs
 ) else (
-    echo Swagger: http://127.0.0.1:%PORT%%BASE_PATH%/
+    echo Swagger: http://127.0.0.1:%PORT%%BASE_PATH%
 )
+echo Health:  http://127.0.0.1:%PORT%/health
 echo Puerto:  set AUDIOENHANCE_API_PORT=%PORT%
-echo Prefijo: set BASE_PATH=%BASE_PATH%
+echo Swagger: set BASE_PATH=%BASE_PATH%
 endlocal
 exit /b 0
